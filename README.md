@@ -3,13 +3,13 @@
 
 
 ## Installation
-`npm i node-struct`
+`npm i node-structor`
 
 ## Usage
 In the example below we will be reading a list of people from a binary source.
 ```js
 const fs = require('fs');
-const Struct = require('node-struct');
+const Struct = require('node-structor');
 
 const structDef = {
     numPersons: {

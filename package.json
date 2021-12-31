@@ -1,5 +1,5 @@
 {
-  "name": "node-struct",
+  "name": "node-structor",
   "version": "0.0.1",
   "description": "Convert binary file data to JavaScript objects",
   "main": "index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Wiiseguy/node-struct.git"
+    "url": "git+https://github.com/Wiiseguy/node-structor.git"
   },
   "keywords": [
     "struct",
