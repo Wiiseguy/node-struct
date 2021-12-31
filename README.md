@@ -9,7 +9,7 @@
 In the example below we will be reading a list of people from a binary source.
 ```js
 const fs = require('fs');
-const Struct = require('node-structor');
+const Structor = require('node-structor');
 
 const structDef = {
     numPersons: {
@@ -39,7 +39,7 @@ const structDef = {
     }
 };
 
-let result = Struct.readStruct(structDef, fs.readFileSync('./examples/people.dat'));
+let result = Structor.readStruct(structDef, fs.readFileSync('./examples/people.dat'));
 
 console.log(result);
 ```
