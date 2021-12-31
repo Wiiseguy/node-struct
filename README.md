@@ -1,4 +1,4 @@
-# node-struct
+# node-structor
 > Convert binary file data to JavaScript objects
 
 
