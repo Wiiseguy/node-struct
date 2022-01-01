@@ -537,3 +537,22 @@ test('$skip - by sibling value', t => {
         b: 3,
     })
 });
+
+test('big ints', t => {
+    let struct = {
+        a: 'uint64', 
+        b: {
+            $goto: 0,
+            $format: 'int64'
+        }, 
+    };
+    let sb = new StreamBuffer(Buffer.alloc(8));
+    sb.writeUInt32LE(0xffffffff);
+    sb.writeUInt32LE(0xffffffff);
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        a: 18446744073709551615n,
+        b: -1n,
+    })
+});

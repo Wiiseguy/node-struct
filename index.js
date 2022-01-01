@@ -11,9 +11,11 @@ const Mapping = {
 	int8: 'Int8',
 	int16: 'Int16',
 	int32: 'Int32',
+	int64: 'BigInt64',	
 	uint8: 'Byte',
 	uint16: 'UInt16',
 	uint32: 'UInt32',
+	uint64: 'BigUInt64',
 	string7: 'String7'
 }
 
@@ -105,7 +107,7 @@ function _read(def, sb, struct, scopes, name) {
 				val = _read(def.$format, sb, {}, scopes, name);
 			}
 		} else if(def.$switch) {
-			let numCase = struct[def.$switch];			
+			let numCase = resolve(def.$switch);
 			let foundCase = def.$cases.find(c => c.$case == numCase);	
 			if(foundCase) {
 				val = _read(foundCase.$format, sb, {}, scopes, name);
@@ -136,20 +138,26 @@ function _read(def, sb, struct, scopes, name) {
 					break;
 				case 'int16le':
 				case 'int32le':
+				case 'int64le':
 				case 'uint16le':
-				case 'uint32le':					
+				case 'uint32le':
+				case 'uint64le':
 					val = sb[composeOperationName(baseDef, EndianModes.LE)](); 
 					break;
 				case 'int16be':
 				case 'int32be':
+				case 'int64be':
 				case 'uint16be':
 				case 'uint32be':
+				case 'uint64be':
 					val = sb[composeOperationName(baseDef, EndianModes.BE)](); 
 					break;
 				case 'int16':				
 				case 'int32':
+				case 'int64':
 				case 'uint16':
-				case 'uint32': 
+				case 'uint32':
+				case 'uint64':
 					val = sb[composeDefaultOperationName(def)](); 
 					break;
 				case 'string':
