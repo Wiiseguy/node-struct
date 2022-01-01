@@ -125,9 +125,11 @@ function _read(def, sb, struct, scopes, name) {
 		} else {
 			const baseDef = def.slice(0, -2); // remove last two chars (be/le)
 			switch(def) {
+				case 'uint8':
 				case 'byte':
 					val = sb.readByte();
 					break;
+				case 'int8':
 				case 'sbyte':
 					val = sb.readSByte();
 					break;
@@ -150,7 +152,6 @@ function _read(def, sb, struct, scopes, name) {
 					val = sb[composeDefaultOperationName(def)](); 
 					break;
 				case 'string':
-					console.log(arguments)
 					val = sb.readString();
 					break;
 				case 'string7': 
