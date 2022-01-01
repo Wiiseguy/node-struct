@@ -89,6 +89,7 @@ Running this will log the following:
 | `uint32` | 32-bit unsigned integer (0 to 4,294,967,295)
 | `int32`  | 32-bit signed integer (-2,147,483,648 to 2,147,483,647)
 | `char_*` | A string of charactered with its length defined by the `*`. e.g. `char_28`
+| `string` | A string terminated by a zero (0) byte or, when used with `$format`,  `$length` and `$encoding` can be specified 
 | `string7` | A string of charactered prepended by its [7-bit encoded](https://msdn.microsoft.com/en-us/library/system.io.binarywriter.write7bitencodedint(v=vs.110).aspx) length
 
 > Note: By default the endianness is little-endian (LE) - But you can explicitly define the endianness e.g. `int16be`, `uint32le`, etc.
@@ -211,3 +212,28 @@ numObjects: {
     $ignore: true
 }
 ```
+`$length`
+---
+Can only be used in conjunction with `$format: 'string'`.
+
+Examples:
+```js
+firstName: {
+    $format: 'string',
+    $length: 32
+}
+```
+> Note: when `$format` is `'string'`, `$length` is optional. If not present, characters will be read until a zero-byte is encountered.
+
+`$encoding`
+---
+Can only be used in conjunction with `$format: 'string'`.
+
+Examples:
+```js
+firstName: {
+    $format: 'string',
+    $encoding: 'ascii'
+}
+```
+> Note: the default value for `$encoding` is `'utf8'`

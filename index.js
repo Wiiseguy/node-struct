@@ -57,7 +57,11 @@ function _read(def, sb, struct, scopes, name) {
 			ignore = true;
 		}
 		if(def.$format) {
-			if(def.$repeat) {
+			if(def.$format === 'string') {
+				let length = def.$length;
+				let encoding = def.$encoding;
+				val = sb.readString(length, encoding);
+			} else if(def.$repeat) {
 				val = [];
 				let numRepeat = Number.isInteger(def.$repeat) ? def.$repeat : _findInScopes(def.$repeat, scopes);
 				for(let i = 0; i < numRepeat; i++) {
@@ -111,6 +115,10 @@ function _read(def, sb, struct, scopes, name) {
 				case 'uint16':
 				case 'uint32': 
 					val = sb[composeDefaultOperationName(def)](); 
+					break;
+				case 'string':
+					console.log(arguments)
+					val = sb.readString();
 					break;
 				case 'string7': 
 					val = sb.readString7(); 

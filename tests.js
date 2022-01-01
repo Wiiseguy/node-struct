@@ -79,6 +79,82 @@ test('$format - nested', t => {
     })
 });
 
+test('$format - string - with length', t => {
+    let struct = {
+        name: {
+            $format: 'string',
+            $length: 3
+        },
+        name2: {
+            $format: 'string',
+            $length: 2
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(8));
+    sb.writeString("hello");
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        name: 'hel',
+        name2: 'lo'
+    })
+});
+
+test('$format - string - no length (0 byte terminator)', t => {
+    let struct = {
+        str: {
+            $format: 'string'
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(10));
+    sb.writeString("hello");
+    sb.writeByte(0);
+    sb.writeString("hi!");
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        str: 'hello'
+    })
+});
+
+test('$format - string - encoding (utf8 default)', t => {
+    let struct = {
+        str: {
+            $format: 'string',
+            $encoding: 'utf8'
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(10));
+    sb.writeString('😃');
+    sb.writeByte(0);
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        str: '😃'
+    })
+});
+
+test('$format - string - encoding', t => {
+    let struct = {
+        str: {
+            $format: 'string',
+            $encoding: 'ascii'
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(10));
+    sb.writeString('😃');
+    sb.writeByte(0);
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        str: 'p\x1F\x18\x03'
+    })
+});
+
 test('$format - $repeat - simple', t => {
     let struct = {
         a: {
