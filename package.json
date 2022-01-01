@@ -1,6 +1,6 @@
 {
   "name": "node-structor",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Convert binary file data to JavaScript objects",
   "main": "index.js",
   "scripts": {
