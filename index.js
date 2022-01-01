@@ -27,12 +27,27 @@ function composeDefaultOperationName(type) {
 	return composeOperationName(type, defaultEndianMode);
 }
 
-function _findInScopes(name, scopes) {
+function resolvePath(obj, path) {
+	let result = obj;
+	let parts = path.split('.');
+	while(parts.length > 0) {
+		let p = parts.shift();
+		result = result[p];
+	}
+	return result;
+}
+
+function _findInScopes(path, scopes) {
+	let name = path;
+	let dotIndex = name.indexOf('.');
+	if(dotIndex !== -1) {
+		name = name.substr(0, dotIndex);
+	}
 	const scope = scopes.find(s => {
 		return s[name] != undefined;
 	});
 	if(scope) {
-		return scope[name];
+		return resolvePath(scope, path);
 	} else {
 		throw new Error(`'${name}' not found in scope.`);
 	}
@@ -45,6 +60,16 @@ function _read(def, sb, struct, scopes, name) {
 	
 	let val, ignore = false;
 
+	const resolve = q => {
+		if(Number.isInteger(q)) {
+			return q;
+		}
+		if(typeof q === 'string') {
+			return _findInScopes(q, scopes);
+		}
+		return null;
+	}
+
 	if(Array.isArray(def)) {
 		val = [];
 		for(let i = 0; i < def.length; i++) {
@@ -56,14 +81,22 @@ function _read(def, sb, struct, scopes, name) {
 		if(def.$ignore) {
 			ignore = true;
 		}
+		if(def.$goto != null) {
+			let pos = resolve(def.$goto);
+			sb.seek(pos);
+		} else if(def.$skip != null) {
+			let skip = resolve(def.$skip);
+			sb.skip(skip);
+		}
+
 		if(def.$format) {
 			if(def.$format === 'string') {
-				let length = def.$length;
+				let length = resolve(def.$length);
 				let encoding = def.$encoding;
 				val = sb.readString(length, encoding);
 			} else if(def.$repeat) {
 				val = [];
-				let numRepeat = Number.isInteger(def.$repeat) ? def.$repeat : _findInScopes(def.$repeat, scopes);
+				let numRepeat = resolve(def.$repeat);
 				for(let i = 0; i < numRepeat; i++) {
 					let obj = _read(def.$format, sb, {}, scopes, name);
 					val.push(obj);
@@ -150,8 +183,15 @@ function _readStruct(def, sb, struct) {
 	return struct;
 }
 
-function readStruct(def, buffer) {	
+function readStruct(def, buffer, options) {	
+	options = {
+		offset: 0,
+		...options
+	};
+
 	let sb = StreamBuffer(buffer);
+	sb.seek(options.offset);
+
 	let result = _readStruct(def, sb, {});
 	return result;
 }

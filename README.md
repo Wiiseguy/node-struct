@@ -94,9 +94,8 @@ Running this will log the following:
 
 > Note: By default the endianness is little-endian (LE) - But you can explicitly define the endianness e.g. `int16be`, `uint32le`, etc.
 
-
-`$format`
----
+## Directives 
+### `$format`
 Define the format.
 
 Examples:
@@ -114,8 +113,7 @@ $format: {                // Results in an object
 $format: ['byte', 'byte'] // Results in an array with two items
 ```
 
-`$repeat`
----
+### `$repeat`
 Repeats the specified `$format`. Can be a number or the name of a property containing the value.
 
 Examples:
@@ -138,8 +136,7 @@ Examples:
 }
 ```
 
-`$switch`
----
+### `$switch`
 Read the next data differently based on a previously read value.
 
 Examples:
@@ -200,8 +197,7 @@ Examples:
 }
 ```
 
-`$ignore`
----
+### `$ignore`
 Read the data, but don't put the property in the eventual JS object.
 
 Examples:
@@ -212,8 +208,31 @@ numObjects: {
     $ignore: true
 }
 ```
-`$length`
----
+
+### `$goto`
+Jumps to the specified byte location before reading the value.
+
+Examples:
+
+```js
+signature: {
+    $goto: 0xf0,
+    $format: 'char_2'    
+}
+```
+### `$skip`
+Skips the specified number of bytes before reading the value.
+
+Examples:
+
+```js
+startOfHeader: {
+    $skip: 255,
+    $format: 'uint16'    
+}
+```
+
+### `$length`
 Can only be used in conjunction with `$format: 'string'`.
 
 Examples:
@@ -225,8 +244,7 @@ firstName: {
 ```
 > Note: when `$format` is `'string'`, `$length` is optional. If not present, characters will be read until a zero-byte is encountered.
 
-`$encoding`
----
+### `$encoding`
 Can only be used in conjunction with `$format: 'string'`.
 
 Examples:
@@ -237,3 +255,39 @@ firstName: {
 }
 ```
 > Note: the default value for `$encoding` is `'utf8'`
+
+
+## Referenced values
+Every numeric directive supports passing a reference value string instead of a hard-coded integer. This can be a simple name pointing to a sibling value, or a more complex path.
+
+Examples:
+
+```js
+{
+    nameLength: 'byte',
+    myName: {
+        $format: 'string',
+        $length: 'nameLength'
+    }
+}
+```
+
+```js
+{
+    header: {
+        config: {
+            nameLength: 'byte'
+        }
+    },
+    myName: {
+        $format: 'string',
+        $length: 'header.config.nameLength'
+    }
+}
+```
+
+Directives that support this:
+- `$repeat`
+- `$length`
+- `$goto`
+- `$skip`

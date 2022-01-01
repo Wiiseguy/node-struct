@@ -101,6 +101,30 @@ test('$format - string - with length', t => {
     })
 });
 
+test('$format - string - with length - by sibling value', t => {
+    let struct = {
+        name2len: { $format: 'byte', $ignore: true },
+        name: {
+            $format: 'string',
+            $length: 3
+        },
+        name2: {
+            $format: 'string',
+            $length: 'name2len'
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(12));
+    sb.writeByte(4);
+    sb.writeString("hello world");
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        name: 'hel',
+        name2: 'lo w'
+    })
+});
+
 test('$format - string - no length (0 byte terminator)', t => {
     let struct = {
         str: {
@@ -194,6 +218,34 @@ test('$format - $repeat - by sibling value', t => {
 
     t.deepEqual(result, {
         num: 3,
+        a: [1, 2, 255],
+    })
+});
+
+test('$format - $repeat - by deep sibling value', t => {
+    let struct = {
+        config: {
+            $ignore: true,
+            $format: {
+                lengths: {
+                    a: 'byte'
+                }
+            }   
+        },
+        a: {
+            $repeat: 'config.lengths.a',
+            $format: 'byte'
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(4));
+    sb.writeByte(3); // num
+    sb.writeByte(1);
+    sb.writeByte(2);
+    sb.writeByte(255);
+    
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
         a: [1, 2, 255],
     })
 });
@@ -370,5 +422,118 @@ test('README example', t => {
               hobbies: []
             }
           ]
+    })
+});
+
+
+test('$goto - basic', t => {
+    let struct = {
+        a: {
+            $goto: 3,
+            $format: 'byte'
+        }, 
+        b: {
+            $goto: 2,
+            $format: 'byte'
+        }, 
+        c: {
+            $goto: 1,
+            $format: 'byte'
+        },   
+        d: {
+            $goto: 0,
+            $format: 'byte'
+        },    
+    };
+    let sb = new StreamBuffer(Buffer.alloc(4));
+    sb.writeByte(1); 
+    sb.writeByte(2);
+    sb.writeByte(3);
+    sb.writeByte(4);
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        a: 4,
+        b: 3,
+        c: 2,
+        d: 1
+    })
+});
+
+test('$goto - by sibling value', t => {
+    let struct = {
+        a: {
+            $goto: 3,
+            $format: 'byte'
+        }, 
+        b: {
+            $goto: 'a',
+            $format: 'byte'
+        }, 
+        c: {
+            $goto: 'b',
+            $format: 'byte'
+        },   
+        d: {
+            $goto: 'c',
+            $format: 'byte'
+        },    
+    };
+    let sb = new StreamBuffer(Buffer.alloc(4));
+    sb.writeByte(1); 
+    sb.writeByte(2);
+    sb.writeByte(3);
+    sb.writeByte(0);
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        a: 0,
+        b: 1,
+        c: 2,
+        d: 3
+    })
+});
+
+test('$skip - basic', t => {
+    let struct = {
+        a: 'byte', 
+        b: {
+            $skip: 1,
+            $format: 'byte'
+        }, 
+    };
+    let sb = new StreamBuffer(Buffer.alloc(3));
+    sb.writeByte(1); 
+    sb.writeByte(2);
+    sb.writeByte(3);
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        a: 1,
+        b: 3,
+    })
+});
+
+test('$skip - by sibling value', t => {
+    let struct = {
+        a: 'byte', 
+        b: {
+            $skip: 'a',
+            $format: 'byte'
+        }, 
+    };
+    let sb = new StreamBuffer(Buffer.alloc(3));
+    sb.writeByte(1); 
+    sb.writeByte(2);
+    sb.writeByte(3);
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        a: 1,
+        b: 3,
     })
 });

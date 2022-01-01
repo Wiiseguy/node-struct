@@ -45,6 +45,6 @@
     "streambuf": "^1.1.3"
   },
   "devDependencies": {
-    "aqa": "^1.2.14"
+    "aqa": "^1.2.15"
   }
 }
