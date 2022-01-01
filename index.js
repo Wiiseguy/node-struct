@@ -110,6 +110,7 @@ function _read(def, sb, struct, scopes, name) {
 			if(foundCase) {
 				val = _read(foundCase.$format, sb, {}, scopes, name);
 			}
+			// TODO: throw when not found
 		} else {			
 			val = {};
 			Object.entries(def).forEach(e => {
