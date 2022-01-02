@@ -179,6 +179,37 @@ test('$format - string - encoding', t => {
     })
 });
 
+test('$format - buffer', t => {
+    let struct = {
+        buf: {
+            $format: 'buffer',
+            $length: 4
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(10));
+    sb.writeString('😃');
+    sb.writeByte(0);
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        buf: Buffer.from([0xf0, 0x9f, 0x98, 0x83])
+    })
+});
+
+test('$format - buffer - no length', t => {
+    let struct = {
+        buf: {
+            $format: 'buffer',
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(10));
+    sb.writeString('😃');
+    sb.writeByte(0);
+
+    t.throws(_ =>  b.readStruct(struct, sb.buffer))
+});
+
 test('$format - $repeat - simple', t => {
     let struct = {
         a: {
@@ -289,6 +320,81 @@ test('$format - $repeat - nested', t => {
             ]
         }
     })
+});
+
+test('$format - $foreach - simple', t => {
+    let struct = {
+        numbers: {
+            $repeat: 3,
+            $format: 'byte'
+        },
+        a: {
+            $foreach: 'numbers n',
+            $format: {
+                address: {
+                    $value: 'n'
+                },
+                data: {
+                    $goto: 'n',
+                    $format: 'byte'
+                }
+            }
+        }
+    };
+    let sb = new StreamBuffer(Buffer.alloc(3));
+    sb.writeByte(2);
+    sb.writeByte(1);
+    sb.writeByte(0);
+    
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        numbers: [2, 1, 0],
+        a:[
+            { address: 2, data: 0 },
+            { address: 1, data: 1 },
+            { address: 0, data: 2 }
+          ]
+    })
+});
+
+test('$format - $foreach - wrong list', t => {
+    let struct = {
+        numbers: 'byte',
+        a: {
+            $foreach: 'numbers n',
+            $format: {}
+        }
+    };
+    let sb = new StreamBuffer(Buffer.alloc(3));
+    sb.writeByte(2);
+    sb.writeByte(1);
+    sb.writeByte(0);
+    
+    let e = t.throws(_ => b.readStruct(struct, sb.buffer) );
+
+    t.is(e.message, "$foreach: numbers must be an array.")
+});
+
+test('$format - $foreach - no alias', t => {
+    let struct = {
+        numbers: {
+            $repeat: 3,
+            $format: 'byte'
+        },
+        a: {
+            $foreach: 'numbers',
+            $format: {}
+        }
+    };
+    let sb = new StreamBuffer(Buffer.alloc(3));
+    sb.writeByte(2);
+    sb.writeByte(1);
+    sb.writeByte(0);
+    
+    let e = t.throws(_ => b.readStruct(struct, sb.buffer) );
+
+    t.is(e.message, `$foreach: item alias is missing, e.g. 'a' in $foreach: "numbers a"`)
 });
 
 test('$switch - nested', t => {
@@ -554,5 +660,27 @@ test('big ints', t => {
     t.deepEqual(result, {
         a: 18446744073709551615n,
         b: -1n,
+    })
+});
+
+
+test('$value', t => {
+    let struct = {
+        name: {
+            $format: 'string'
+        },
+        name2: {
+            $value: 'name'
+        },
+    };
+    let sb = new StreamBuffer(Buffer.alloc(8));
+    sb.writeString("hello");
+    sb.writeByte(0);
+
+    let result = b.readStruct(struct, sb.buffer);
+
+    t.deepEqual(result, {
+        name: 'hello',
+        name2: 'hello'
     })
 });

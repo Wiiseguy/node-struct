@@ -91,16 +91,36 @@ function _read(def, sb, struct, scopes, name) {
 			sb.skip(skip);
 		}
 
-		if(def.$format) {
+		if(def.$value) {
+			val = resolve(def.$value);
+		} else if(def.$format) {
 			if(def.$format === 'string') {
 				let length = resolve(def.$length);
 				let encoding = def.$encoding;
 				val = sb.readString(length, encoding);
+			} else if(def.$format === 'buffer') {
+				let length = resolve(def.$length);
+				if(!length) throw new Error("When $format = 'buffer', $length must be an integer greater than 0.");
+				val = sb.read(length).buffer;
 			} else if(def.$repeat) {
 				val = [];
 				let numRepeat = resolve(def.$repeat);
 				for(let i = 0; i < numRepeat; i++) {
 					let obj = _read(def.$format, sb, {}, scopes, name);
+					val.push(obj);
+				}
+			} else if(def.$foreach) {
+				val = [];
+				let [listName, listAlias] = def.$foreach.split(' ');
+				let list = resolve(listName);
+				if(!Array.isArray(list)) throw new Error(`$foreach: ${listName} must be an array.`)
+				if(!listAlias) throw new Error(`$foreach: item alias is missing, e.g. 'a' in $foreach: "${listName} a"`);
+
+				for(let i = 0; i < list.length; i++) {
+					let itemScope = {};
+					itemScope[listAlias] = list[i];
+					let itemScopes = [...scopes, itemScope];
+					let obj = _read(def.$format, sb, {}, itemScopes, name);
 					val.push(obj);
 				}
 			} else {
