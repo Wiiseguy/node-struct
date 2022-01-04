@@ -94,7 +94,9 @@ function _read(def, sb, struct, scopes, name) {
 		if(def.$value) {
 			val = resolve(def.$value);
 		} else if(def.$format) {
-			if(def.$format === 'string') {
+			if(def.$format === '$tell') {
+				val = sb.tell();
+			} else if(def.$format === 'string') {
 				let length = resolve(def.$length);
 				let encoding = def.$encoding;
 				val = sb.readString(length, encoding);
@@ -204,13 +206,16 @@ function _read(def, sb, struct, scopes, name) {
 
 function _readStruct(def, sb, struct) {
 	let scopes = [struct];
-	Object.entries(def).forEach(e => {
-		let [name, type] = e;
-		let val = _read(type, sb, struct, scopes, name);		
-		//struct[name] = val;
-	});
+	if(typeof def === 'object') {
+		Object.entries(def).forEach(e => {
+			let [name, type] = e;
+			_read(type, sb, struct, scopes, name);					
+		});
 
-	return struct;
+		return struct;
+	} else if (typeof def === 'string') {
+		return _read(def, sb, struct, scopes, 'value')
+	}
 }
 
 function readStruct(def, buffer, options) {	
@@ -219,15 +224,31 @@ function readStruct(def, buffer, options) {
 		...options
 	};
 
-	let sb = StreamBuffer(buffer);
+	let sb = new StreamBuffer(buffer);
 	sb.seek(options.offset);
 
 	let result = _readStruct(def, sb, {});
+	console.log("EOF:", sb.isEOF(), "| tell():", sb.tell(), sb.tell().toString(16))
 	return result;
 }
+
+function sizeOf(def) {
+	let buffer = new FakeBuffer();
+	let sb = new StreamBuffer(buffer);
+	_readStruct(def, sb, {});
+	return sb.tell();
+}
+
+function FakeBuffer() {
+	Object.keys(Buffer.prototype).forEach(bp => {
+		this[bp] = function() { return 0; }
+	});
+}
+FakeBuffer.prototype = Object.create(Buffer.prototype);     
 
 module.exports = {
 	EndianModes,
 
-	readStruct
+	readStruct,
+	sizeOf
 }
