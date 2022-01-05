@@ -84,10 +84,10 @@ function _read(def, sb, struct, scopes, name) {
 			ignore = true;
 		}
 		if(def.$goto != null) {
-			let pos = resolve(def.$goto);
+			let pos = Number(resolve(def.$goto));
 			sb.seek(pos);
 		} else if(def.$skip != null) {
-			let skip = resolve(def.$skip);
+			let skip = Number(resolve(def.$skip));
 			sb.skip(skip);
 		}
 
@@ -96,7 +96,7 @@ function _read(def, sb, struct, scopes, name) {
 		} else if(def.$format) {
 			if(def.$format === '$tell') {
 				val = sb.tell();
-			} else if(def.$repeat) {
+			} else if(def.$repeat != null) {
 				val = [];
 				let numRepeat = resolve(def.$repeat);
 				for(let i = 0; i < numRepeat; i++) {
@@ -133,6 +133,11 @@ function _read(def, sb, struct, scopes, name) {
 			let foundCase = def.$cases.find(c => c.$case == numCase);	
 			if(foundCase) {
 				val = _read(foundCase.$format, sb, {}, scopes, name);
+			} else {
+				let defaultCase = def.$cases.find(c => c.$case == null);
+				if(defaultCase) {
+					val = _read(defaultCase.$format, sb, {}, scopes, name);
+				}
 			}
 			// TODO: throw when not found
 		} else {			
@@ -141,7 +146,16 @@ function _read(def, sb, struct, scopes, name) {
 				let [name, type] = e;
 				val[name] = _read(type, sb, val, scopes, name);
 			});			
-		} 
+		}
+		
+		if(def.$map) {
+			if(typeof def.$map === 'function') {
+				val = def.$map(val, name, struct, scopes); // TODO: test
+			} else if(def.$map === 'number') {
+				val = Number(val);
+			}
+		}
+		
 	} else {
 		if(def.startsWith('char')) {
 			let [_, len] = def.split('_');
