@@ -96,14 +96,6 @@ function _read(def, sb, struct, scopes, name) {
 		} else if(def.$format) {
 			if(def.$format === '$tell') {
 				val = sb.tell();
-			} else if(def.$format === 'string') {
-				let length = resolve(def.$length);
-				let encoding = def.$encoding;
-				val = sb.readString(length, encoding);
-			} else if(def.$format === 'buffer') {
-				let length = resolve(def.$length);
-				if(!length) throw new Error("When $format = 'buffer', $length must be an integer greater than 0.");
-				val = sb.read(length).buffer;
 			} else if(def.$repeat) {
 				val = [];
 				let numRepeat = resolve(def.$repeat);
@@ -125,7 +117,15 @@ function _read(def, sb, struct, scopes, name) {
 					let obj = _read(def.$format, sb, {}, itemScopes, name);
 					val.push(obj);
 				}
-			} else {
+			} else if(def.$format === 'string') {
+				let length = resolve(def.$length);
+				let encoding = def.$encoding;
+				val = sb.readString(length, encoding);
+			} else if(def.$format === 'buffer') {
+				let length = resolve(def.$length);
+				if(!length) throw new Error("When $format = 'buffer', $length must be an integer greater than 0.");
+				val = sb.read(length).buffer;
+			}  else {
 				val = _read(def.$format, sb, {}, scopes, name);
 			}
 		} else if(def.$switch) {
@@ -221,6 +221,7 @@ function _readStruct(def, sb, struct) {
 function readStruct(def, buffer, options) {	
 	options = {
 		offset: 0,
+		info: {},
 		...options
 	};
 
@@ -228,7 +229,9 @@ function readStruct(def, buffer, options) {
 	sb.seek(options.offset);
 
 	let result = _readStruct(def, sb, {});
-	console.log("EOF:", sb.isEOF(), "| tell():", sb.tell(), sb.tell().toString(16))
+	options.info.eof = sb.isEOF();
+	options.info.pos = sb.tell();
+	options.info.len = buffer.length;	
 	return result;
 }
 
