@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "aqa",
-    "watch:test": "aqa --watch"
+    "test:watch": "aqa --watch",
+    "test:coverage": "c8 npm test & c8 report -r lcov"
   },
   "repository": {
     "type": "git",
@@ -42,9 +43,11 @@
   },
   "homepage": "https://github.com/Wiiseguy/node-struct#readme",
   "dependencies": {
-    "streambuf": "^1.1.4"
+    "streambuf": "^2.0.0"
   },
   "devDependencies": {
-    "aqa": "^1.2.15"
+    "@types/node": "^20.14.9",
+    "aqa": "^1.6.13",
+    "c8": "^10.1.2"
   }
 }

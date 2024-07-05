@@ -75,6 +75,16 @@ Running this will log the following:
 }
 ```
 
+## API
+
+### `readStruct(structDef, buffer, [options])`
+Reads the binary data from the buffer according to the structure definition. Returns a JavaScript object.
+
+### `writeStruct(obj, structDef, data, [options])`
+Writes the an object to a binary buffer according to the structure definition. Returns the number of bytes written.
+
+### `sizeOf(structDef, [size = 4096])`
+Calculates the size of the binary data that would be written according to the structure definition. The size parameter is optional and defaults to 4096; it references the size of the buffer that will be allocated to be able to calculate the size of the data.
 
 ## Types
 
@@ -90,30 +100,49 @@ Running this will log the following:
 | `int32`  | 32-bit signed integer (-2,147,483,648 to 2,147,483,647)
 | `uint64` | 64-bit unsigned integer (read as `BigInt`)
 | `int64`  | 64-bit signed integer (read as `BigInt`)
-| `char_*` | A string of charactered with its length defined by the `*`. e.g. `char_28`
-| `string` | A string terminated by a zero (0) byte or, when used with `$format`,  `$length` and `$encoding` can be specified 
-| `string7` | A string of charactered prepended by its [7-bit encoded](https://msdn.microsoft.com/en-us/library/system.io.binarywriter.write7bitencodedint(v=vs.110).aspx) length
-| `buffer` | Read `$length` amount of bytes as a new `Buffer`
+| `char_*` | A string of characters with its length defined by the `*`. e.g. `char_28`
+| `string0`| A string of characters terminated by a zero (0) byte. When used with writeStruct, it will write the string with a zero byte at the end.
+| `string7`| A string of characters prepended by its [7-bit encoded](https://msdn.microsoft.com/en-us/library/system.io.binarywriter.write7bitencodedint(v=vs.110).aspx) length
+| `string` | Can only be used in conjunction with `$format`. Read `$length` amount of bytes as a new string. Can also be used with `$encoding` to specify the encoding. Default is `utf8`.
+| `buffer` | Can only be used in conjunction with `$format`. Read `$length` amount of bytes as a new `Buffer`. 
 
 > Note: By default the endianness is little-endian (LE) - But you can explicitly define the endianness e.g. `int16be`, `uint64le`, etc.
 
 ## Directives 
 ### `$format`
-Define the format.
+Define the format. This can be any of the types mentioned above, or another structure definition.
 
 Examples:
 
 ```js
-$format: 'uint16'         // Results in a single number
+{ 
+    someNumber: {
+        $format: 'uint16'    // Results in a single number
+    },
+    anotherNumber: 'uint16'  // Short-hand for the above
+}
 ```
+
+Some types only work in conjunction with `$format`, as they require extra information to be on the same level. These are: `string` and `buffer`.
+
+Examples:
+
 ```js
-$format: {                // Results in an object
-    a: 'byte',
-    b: 'byte'
+{
+    name: {
+        $format: 'string',
+        $length: 32,
+        $encoding: 'ascii' // $encoding is optional, default is 'utf8'
+    }
 }
 ```
 ```js
-$format: ['byte', 'byte'] // Results in an array with two items
+{
+    blobData: {
+        $format: 'buffer',
+        $length: 64000
+    }
+}
 ```
 
 ### `$repeat`
@@ -149,7 +178,7 @@ Examples:
     fileTable: {
         $repeat: 'numFiles',
         $format: {
-            name: 'string',
+            name: 'char_24',
             address: 'uint32',
             length: 'uint32'
         }
@@ -159,7 +188,8 @@ Examples:
         $foreach: 'fileTable file', 
         $format: {
             fileName: {
-                $value: 'file.name'
+                $value: 'file.name',
+                $format: 'char_24'
             },
             fileContent: {
                 $goto: 'file.address',
@@ -307,7 +337,21 @@ A special directive that doesn't read anything from the buffer and thus doesn't 
 {
     name: 'string',
     nameCopy: {
-        $value: 'name'
+        $value: 'name',
+        $format: 'uint32'
+    }
+}
+```
+
+### `$tell`
+A special directive that reads the current position of the internal cursor. Must be used in conjunction with `$format: '$tell'`.
+
+```js
+{
+    name: 'string',
+    currentAddress: {
+        $format: '$tell',
+        $tell: 'uint16'
     }
 }
 ```
