@@ -162,7 +162,7 @@ Examples:
     objects: {
         $format: {
             ...
-        }
+        },
         $repeat: 'numObjects'
     }
 }
